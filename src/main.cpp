@@ -11,14 +11,13 @@
 #define DIRECTION_Z -1
 
 
-BNO055 root_sensor(ADDRESS_0x28);
-BNO055 shoulder_sensor(ADDRESS_0x29);
+BNO055 root_sensor(ADDRESS_0x29);
+BNO055 shoulder_sensor(ADDRESS_0x28);
 
 Quaternion root_q;
 Quaternion shoulder_q;
 Quaternion final_q;
 Angles final_angles;
-
 
 void setup() {
   Wire.begin();
@@ -29,6 +28,7 @@ void setup() {
 
 void loop() {
   root_sensor.readQuat();
+  root_sensor.readMag();
   shoulder_sensor.readQuat();
 
   root_q = create_quaternion_from_exist(
@@ -45,9 +45,12 @@ void loop() {
     shoulder_sensor.quat.q0  // w
     );
 
-
+  
   final_q = quaternion_mult(shoulder_q, quaternion_invert(root_q));
   final_angles = get_angles_from_quat(final_q, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
+  // String data = String(shoulder_q.x) + "  " + String(shoulder_q.y) + "  " + String(shoulder_q.z) + "  " + String(shoulder_q.w);
+  String data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z) + " | " +  String(root_sensor.mag.x) +  "  " + String(root_sensor.mag.y) +  "  " + String(root_sensor.mag.z);
+  Serial.println(data);
 
-  Serial.printf("%f  %f  %f", final_angles.from_x, final_angles.from_y, final_angles.from_z);
+  delay(10);
 }
