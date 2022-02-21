@@ -22,23 +22,29 @@
 
 
 struct Quaternion {
-    double w, x, y, z;
+    float w, x, y, z;
 };    
 
 struct Angles {
-    double from_x, from_y, from_z, theta;
+    float from_x, from_y, from_z, theta;
+};
+
+struct EulerAngles {
+    float yaw, pitch, roll;
 };
 
 
-double quaternion_length(Quaternion q);
+float quaternion_length(Quaternion q);
 
 Quaternion create_quaternion_from_exist(float x, float y, float z, float angle);
 Quaternion quaternion_scale(Quaternion q, float val);
 Quaternion quaternion_normalize(Quaternion q);
 Quaternion quaternion_invert(Quaternion q);
 Quaternion quaternion_mult(Quaternion a, Quaternion b);        
+Quaternion quaternion_div(Quaternion a, Quaternion b);
 
-Angles get_angles_from_quat(Quaternion quat, uint8_t x_dir, uint8_t y_dir, uint8_t z_dir);
+EulerAngles quaternion_to_euler(Quaternion q);
+Angles get_angles_from_quat(Quaternion quat, int8_t x_dir, int8_t y_dir, int8_t z_dir);
 
 
 #endif

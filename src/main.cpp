@@ -11,13 +11,17 @@
 #define DIRECTION_Z -1
 
 
-BNO055 root_sensor(ADDRESS_0x28);
-BNO055 shoulder_sensor(ADDRESS_0x29);
+BNO055 root_sensor(ADDRESS_0x29);
+BNO055 shoulder_sensor(ADDRESS_0x28);
 
 Quaternion root_q;
 Quaternion shoulder_q;
 Quaternion final_q;
-Angles final_angles;
+Angles final_a;
+Angles root_a;
+EulerAngles final_ea;
+
+String data;
 
 
 void setup() {
@@ -46,8 +50,18 @@ void loop() {
     );
 
 
-  final_q = quaternion_mult(shoulder_q, quaternion_invert(root_q));
-  final_angles = get_angles_from_quat(final_q, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
+  // final_q = quaternion_mult(shoulder_q, quaternion_invert(root_q));
+  // root_a = get_angles_from_quat(root_q, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
 
-  Serial.printf("%f  %f  %f", final_angles.from_x, final_angles.from_y, final_angles.from_z);
+  final_q = quaternion_div(root_q, shoulder_q);
+  final_a = get_angles_from_quat(final_q, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
+
+
+  final_ea = quaternion_to_euler(final_q);
+
+  data = String(final_a.from_x) + "  " + String(final_a.from_y) + "  " + String(final_a.from_z) + "  |  " + String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
+  // data = String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
+
+  // data = String(final_q.w) + "  " + String(final_q.x) + "  " + String(final_q.y) + "  " + String(final_q.z);
+  Serial.println(data);
 }
