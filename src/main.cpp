@@ -2,6 +2,9 @@
 #include <Wire.h>
 #include "BNO055.h"
 #include "SpaceHandler.h"
+#include "MQTT.h"
+#include "config.h"
+#include <ArduinoJson.h>
 
 #define ADDRESS_0x28 0X28  //I2C address selection pin LOW
 #define ADDRESS_0x29 0x29  //                          HIGH
@@ -23,12 +26,27 @@ EulerAngles final_ea;
 
 String data;
 
+MQTTController mqtt;
+
+void callback(char *topic, byte *payload, unsigned int length);
 
 void setup() {
   Wire.begin();
   Serial.begin(9600);
   root_sensor.init();
   shoulder_sensor.init();
+
+  pinMode(ELBOW_SENSOR_PIN, INPUT);
+
+  mqtt.initialize(
+    MQTT_WIFI_SSID,
+    MQTT_WIFI_PASSWORD,
+    MQTT_SERVER,
+    MQTT_PORT,
+    MQTT_USER,
+    MQTT_PASSWORD,
+    MQTT_CLIENT_ID);
+
 }
 
 void loop() {
@@ -59,9 +77,23 @@ void loop() {
 
   final_ea = quaternion_to_euler(final_q);
 
+  StaticJsonDocument<256> doc;
+  char out[128];
+
+  doc["from_x"] = final_a.from_x;
+  doc["from_y"] = final_a.from_y;
+  doc["from_z"] = final_a.from_z;
+  doc["elbow"] = analogRead(ELBOW_SENSOR_PIN);
+
+  int b = serializeJson(doc, out);
+
+  mqtt.send(MQTT_ARMS_TOPIC, out);
+
+
   data = String(final_a.from_x) + "  " + String(final_a.from_y) + "  " + String(final_a.from_z) + "  |  " + String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
   // data = String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
 
   // data = String(final_q.w) + "  " + String(final_q.x) + "  " + String(final_q.y) + "  " + String(final_q.z);
   Serial.println(data);
+  delay(150);
 }
