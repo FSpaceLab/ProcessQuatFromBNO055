@@ -6,16 +6,16 @@
 #include "config.h"
 #include <ArduinoJson.h>
 
-#define ADDRESS_0x28 0X28  //I2C address selection pin LOW
-#define ADDRESS_0x29 0x29  //                          HIGH
+#define ADDRESS_1 0X28  //I2C address selection pin LOW
+#define ADDRESS_2 0x29  //                          HIGH
 
 #define DIRECTION_X -1
 #define DIRECTION_Y -1
 #define DIRECTION_Z -1
 
 
-BNO055 root_sensor(ADDRESS_0x29);
-BNO055 shoulder_sensor(ADDRESS_0x28);
+BNO055 root_sensor(ADDRESS_2);
+BNO055 shoulder_sensor(ADDRESS_1);
 
 Quaternion root_q;
 Quaternion shoulder_q;
@@ -88,12 +88,15 @@ void loop() {
   int b = serializeJson(doc, out);
 
   mqtt.send(MQTT_ARMS_TOPIC, out);
+  
+  data = String();
 
+  // data  = String(root_q.x) + "  " + String(root_q.y) + "  " + String(root_q.z) + "  " + String(root_q.w);
 
   data = String(final_a.from_x) + "  " + String(final_a.from_y) + "  " + String(final_a.from_z) + "  |  " + String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
   // data = String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
 
   // data = String(final_q.w) + "  " + String(final_q.x) + "  " + String(final_q.y) + "  " + String(final_q.z);
   Serial.println(data);
-  delay(150);
+  delay(70);
 }
