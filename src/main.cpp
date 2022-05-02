@@ -6,23 +6,25 @@
 #include "config.h"
 #include "ArduinoJson.h"
 
-#define ADDRESS_1 0X28  //I2C address selection pin LOW
-#define ADDRESS_2 0x29  //                          HIGH
+// #define EULER_ANGELS
+
+#define ADDRESS_SHOULDER 0X28   // I2C address selection pin LOW
+#define ADDRESS_ROOT 0x29       // HIGH
 
 #define DIRECTION_X -1
 #define DIRECTION_Y -1
 #define DIRECTION_Z -1
 
+BNO055 shoulder_sensor(ADDRESS_SHOULDER);
+BNO055 root_sensor(ADDRESS_ROOT);
 
-BNO055 root_sensor(ADDRESS_2);
-BNO055 shoulder_sensor(ADDRESS_1);
-
-Quaternion root_q;
-Quaternion shoulder_q;
-Quaternion final_q;
-Angles final_a;
-Angles root_a;
-EulerAngles final_ea;
+Quaternion root_quat;
+Quaternion shoulder_quat;
+Quaternion final_quat;
+Angles final_angles;
+#ifdef EULER_ANGELS
+EulerAngles final_euler_angles;
+#endif
 
 String data;
 
@@ -31,8 +33,12 @@ MQTTController mqtt;
 void callback(char *topic, byte *payload, unsigned int length);
 
 void setup() {
-  Wire.begin();
+
+#ifdef DEBUG
   Serial.begin(9600);
+#endif
+
+  Wire.begin();
   root_sensor.init();
   shoulder_sensor.init();
 
@@ -53,50 +59,47 @@ void loop() {
   root_sensor.readQuat();
   shoulder_sensor.readQuat();
 
-  root_q = create_quaternion_from_exist(
+  root_quat = create_quaternion_from_exist(
     root_sensor.quat.q1, // x
     root_sensor.quat.q2, // y
     root_sensor.quat.q3, // z
     root_sensor.quat.q0  // w
     );
 
-  shoulder_q = create_quaternion_from_exist(
+  shoulder_quat = create_quaternion_from_exist(
     shoulder_sensor.quat.q1, // x
     shoulder_sensor.quat.q2, // y
     shoulder_sensor.quat.q3, // z
     shoulder_sensor.quat.q0  // w
     );
 
+  final_quat = quaternion_div(root_quat, shoulder_quat);
+  final_angles = get_angles_from_quat(final_quat, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
 
-  // final_q = quaternion_mult(shoulder_q, quaternion_invert(root_q));
-  // root_a = get_angles_from_quat(root_q, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
+#ifdef EULER_ANGELS
+  final_euler_angles = quaternion_to_euler(final_quat);
+#endif
 
-  final_q = quaternion_div(root_q, shoulder_q);
-  final_a = get_angles_from_quat(final_q, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
+  StaticJsonDocument<256> json_obj;
+  char json_arr[128];
+  json_obj["from_x"] = final_angles.from_x;
+  json_obj["from_y"] = final_angles.from_y;
+  json_obj["from_z"] = final_angles.from_z;
+  json_obj["elbow"] = analogRead(ELBOW_SENSOR_PIN);
+  serializeJson(json_obj, json_arr);
 
+  // mqtt.send(MQTT_ARMS_TOPIC, json_arr);
 
-  final_ea = quaternion_to_euler(final_q);
-
-  StaticJsonDocument<256> doc;
-  char out[128];
-
-  doc["from_x"] = final_a.from_x;
-  doc["from_y"] = final_a.from_y;
-  doc["from_z"] = final_a.from_z;
-  doc["elbow"] = analogRead(ELBOW_SENSOR_PIN);
-
-  int b = serializeJson(doc, out);
-
-  mqtt.send(MQTT_ARMS_TOPIC, out);
-  
-  data = String();
-
+#ifdef DEBUG
+#ifndef EULER_ANGELS
   // data  = String(root_q.x) + "  " + String(root_q.y) + "  " + String(root_q.z) + "  " + String(root_q.w);
-
-  data = String(final_a.from_x) + "  " + String(final_a.from_y) + "  " + String(final_a.from_z) + "  |  " + String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
-  // data = String(final_ea.yaw) + "  " + String(final_ea.pitch) + "  " + String(final_ea.roll);
-
-  // data = String(final_q.w) + "  " + String(final_q.x) + "  " + String(final_q.y) + "  " + String(final_q.z);
+  data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z);
+#else
+  data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z)
+       + "  |  " + String(final_euler_angles.yaw) + "  " + String(final_euler_angles.pitch) + "  " + String(final_euler_angles.roll);
+#endif
   Serial.println(data);
-  delay(70);
+#endif
+
+  delay(DELAY_MS);
 }
