@@ -5,6 +5,7 @@
 #include "MQTT.h"
 #include "config.h"
 #include "ArduinoJson.h"
+#include "ADS1X15.h"
 
 // #define EULER_ANGELS
 
@@ -30,6 +31,8 @@ String data;
 
 MQTTController mqtt;
 
+Adafruit_ADS1115 elbow_sensor;
+
 void callback(char *topic, byte *payload, unsigned int length);
 
 void setup() {
@@ -53,6 +56,8 @@ void setup() {
     MQTT_PASSWORD,
     MQTT_CLIENT_ID);
 
+  if (!elbow_sensor.begin(0x48))
+    Serial.println("Failed to initialize elbow sensor");
 }
 
 void loop() {
@@ -85,7 +90,7 @@ void loop() {
   json_obj["from_x"] = final_angles.from_x;
   json_obj["from_y"] = final_angles.from_y;
   json_obj["from_z"] = final_angles.from_z;
-  json_obj["elbow"] = analogRead(ELBOW_SENSOR_PIN);
+  json_obj["elbow"] = elbow_sensor.readADC_SingleEnded(0);
   serializeJson(json_obj, json_arr);
 
   // mqtt.send(MQTT_ARMS_TOPIC, json_arr);
@@ -98,7 +103,7 @@ void loop() {
   data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z)
        + "  |  " + String(final_euler_angles.yaw) + "  " + String(final_euler_angles.pitch) + "  " + String(final_euler_angles.roll);
 #endif
-  Serial.println(data);
+  Serial.println(json_arr);
 #endif
 
   delay(DELAY_MS);
