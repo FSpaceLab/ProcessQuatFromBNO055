@@ -9,94 +9,116 @@
 #include "SparkFunFlexes.h" 
 
 // #define EULER_ANGELS
+#define DIRECTION_X 1
+#define DIRECTION_Y 1
+#define DIRECTION_Z 1
 
-#define ADDRESS_SHOULDER 0X28   // I2C address selection pin LOW
-#define ADDRESS_ROOT 0x29       // HIGH
-
-#define DIRECTION_X -1
-#define DIRECTION_Y -1
-#define DIRECTION_Z -1
-
-BNO055 shoulder_sensor(ADDRESS_SHOULDER);
-BNO055 root_sensor(ADDRESS_ROOT);
-
+BNO055 root_sensor;
+BNO055 shoulder_sensor;
 Adafruit_ADS1115 elbow_sensor;
-
 ADS wrist_x_sensor;
 ADS wrist_y_sensor;
-
 ADS thumb_finger_sensor;
 ADS index_finger_sensor;
 ADS middle_finger_sensor;
 ADS ring_finger_sensor;
 ADS little_finger_sensor;
 
+bool is_root_sensor_available = false;
+bool is_shoulder_sensor_available = false;
+
 Quaternion root_quat;
 Quaternion shoulder_quat;
 Quaternion final_quat;
 Angles final_angles;
-#ifdef EULER_ANGELS
-EulerAngles final_euler_angles;
-#endif
 
 MQTTController mqtt;
-
-String data;
 
 // void callback(char *topic, byte *payload, unsigned int length);
 
 void setup() 
 {
-  Wire.begin();
+#ifdef DEBUG
+  Serial.begin(9600);
+#endif
+
   while (!Wire.begin())
   {
-    LOG("Setup failed to initialize I2C interface. Retrying...");
+    LOG("Failed to initialize I2C interface. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
-
-  root_sensor.init();
-  shoulder_sensor.init();
+  LOG("I2C interface initialized successfully");
+  
+  is_root_sensor_available = root_sensor.begin(ROOT_BACK_SENSOR_ADDR);
+  if (is_root_sensor_available) {LOG("root_sensor initialized successfully");} else {LOG("Failed to initialize root_sensor");}
+  
+  is_shoulder_sensor_available = shoulder_sensor.begin(SHOULDER_SENSOR_ADDR);
+  if (is_shoulder_sensor_available) {LOG("shoulder_sensor initialized successfully");} else {LOG("Failed to initialize shoulder_sensor");}
 
   while (!elbow_sensor.begin(ELBOW_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize elbow_sensor. Retrying...");
+    LOG("Failed to initialize elbow_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("elbow_sensor initialized successfully");
+  
   while(!wrist_x_sensor.begin(WRIST_X_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize wrist_x_sensor. Retrying...");
+    LOG("Failed to initialize wrist_x_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("wrist_x_sensor initialized successfully");
+
   while(!wrist_y_sensor.begin(WRIST_Y_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize wrist_y_sensor. Retrying...");
+    LOG("Failed to initialize wrist_y_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("wrist_y_sensor initialized successfully");
+  
   while(!thumb_finger_sensor.begin(THUMB_FINGER_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize thumb_finger_sensor. Retrying...");
+    LOG("Failed to initialize thumb_finger_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("thumb_finger_sensor initialized successfully");
+
   while(!index_finger_sensor.begin(INDEX_FINGER_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize index_finger_sensor. Retrying...");
+    LOG("Failed to initialize index_finger_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("index_finger_sensor initialized successfully");
+
   while(!middle_finger_sensor.begin(MIDDLE_FINGER_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize middle_finger_sensor. Retrying...");
+    LOG("Failed to initialize middle_finger_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("middle_finger_sensor initialized successfully");
+
   while(!ring_finger_sensor.begin(RING_FINGER_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize ring_finger_sensor. Retrying...");
+    LOG("Failed to initialize ring_finger_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("ring_finger_sensor initialized successfully");
+
   while(!little_finger_sensor.begin(LITTLE_FINGER_SENSOR_ADDR))
   {
-    LOG("Setup failed to initialize little_finger_sensor. Retrying...");
+    LOG("Failed to initialize little_finger_sensor. Retrying...");
     delay(DELAY_MS);
+    break; // TODO remove it
   }
+  LOG("little_finger_sensor initialized successfully");
 
   mqtt.initialize(
     MQTT_WIFI_SSID,
@@ -106,10 +128,6 @@ void setup()
     MQTT_USER,
     MQTT_PASSWORD,
     MQTT_CLIENT_ID);
-
-#ifdef DEBUG
-  Serial.begin(9600);
-#endif
 }
 
 void loop() 
@@ -123,7 +141,6 @@ void loop()
     root_sensor.quat.q3, // z
     root_sensor.quat.q0  // w
     );
-
   shoulder_quat = create_quaternion_from_exist(
     shoulder_sensor.quat.q1, // x
     shoulder_sensor.quat.q2, // y
@@ -134,37 +151,27 @@ void loop()
   final_quat = quaternion_div(root_quat, shoulder_quat);
   final_angles = get_angles_from_quat(final_quat, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
 
-#ifdef EULER_ANGELS
-  final_euler_angles = quaternion_to_euler(final_quat);
-#endif
-
   StaticJsonDocument<256> json_obj;
-  char json_arr[128];
-  json_obj["shoulder_x"] = final_angles.from_x;
-  json_obj["shoulder_y"] = final_angles.from_y;
-  json_obj["shoulder_z"] = final_angles.from_z;
-  json_obj["elbow"] = elbow_sensor.readADC_SingleEnded(0);
-  json_obj["wrist_x"] = wrist_x_sensor.available() ? String(wrist_x_sensor.getX()) : "-1";
-  json_obj["wrist_y"] = wrist_y_sensor.available() ? String(wrist_y_sensor.getX()) : "-1";
-  json_obj["thumb_finger"] = thumb_finger_sensor.available() ? String(thumb_finger_sensor.getX()) : "-1";
-  json_obj["index_finger"] = index_finger_sensor.available() ? String(index_finger_sensor.getX()) : "-1";
-  json_obj["middle_finger"] = middle_finger_sensor.available() ? String(middle_finger_sensor.getX()) : "-1";
-  json_obj["ring_finger"] = ring_finger_sensor.available() ? String(ring_finger_sensor.getX()) : "-1";
-  json_obj["little_finger"] = little_finger_sensor.available() ? String(little_finger_sensor.getX()) : "-1";
+  char json_arr[256];
+  json_obj["shoulder_x"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_x) : "-1";
+  json_obj["shoulder_y"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_y) : "-1";
+  json_obj["shoulder_z"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_z) : "-1";
+  json_obj["elbow"] = elbow_sensor.isConnected() ? String(elbow_sensor.readADC_SingleEnded(0)) : "-1";
+  json_obj["wrist_x"] = wrist_x_sensor.isConnected() && wrist_x_sensor.available() ? String(wrist_x_sensor.getX()) : "-1";
+  json_obj["wrist_y"] = wrist_y_sensor.isConnected() && wrist_y_sensor.available() ? String(wrist_y_sensor.getX()) : "-1";
+  json_obj["thumb_finger"] = thumb_finger_sensor.isConnected() && thumb_finger_sensor.available() ? String(thumb_finger_sensor.getX()) : "-1";
+  json_obj["index_finger"] = index_finger_sensor.isConnected() && index_finger_sensor.available() ? String(index_finger_sensor.getX()) : "-1";
+  json_obj["middle_finger"] = middle_finger_sensor.isConnected() && middle_finger_sensor.available() ? String(middle_finger_sensor.getX()) : "-1";
+  json_obj["ring_finger"] = ring_finger_sensor.isConnected() && ring_finger_sensor.available() ? String(ring_finger_sensor.getX()) : "-1";
+  json_obj["little_finger"] = little_finger_sensor.isConnected() && little_finger_sensor.available() ? String(little_finger_sensor.getX()) : "-1";
   serializeJson(json_obj, json_arr);
+  
+  mqtt.send(MQTT_ARMS_TOPIC, json_arr);
 
-  // mqtt.send(MQTT_ARMS_TOPIC, json_arr);
-
-#ifdef DEBUG
-#ifndef EULER_ANGELS
-  // data  = String(root_q.x) + "  " + String(root_q.y) + "  " + String(root_q.z) + "  " + String(root_q.w);
-  // data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z);
-#else
-  data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z)
-       + "  |  " + String(final_euler_angles.yaw) + "  " + String(final_euler_angles.pitch) + "  " + String(final_euler_angles.roll);
-#endif
+  // String data = String(root_quat.x) + "  " + String(root_quat.y) + "  " + String(root_quat.z) + "  " + String(root_quat.w); // TODO remove it
+  // String data = String(shoulder_quat.x) + "  " + String(shoulder_quat.y) + "  " + String(shoulder_quat.z) + "  " + String(shoulder_quat.w); // TODO remove it
+  // String data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z); // TODO remove it
   LOG(json_arr);
-#endif
 
   delay(DELAY_MS);
 }

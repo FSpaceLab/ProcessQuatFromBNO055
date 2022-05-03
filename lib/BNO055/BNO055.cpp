@@ -20,9 +20,7 @@
 
 //PUBLIC
 
-BNO055::BNO055(uint8_t address){
-    BNO055_ADDRESS = address;
-
+BNO055::BNO055(){
     GPwrMode = NormalG;    // Gyro power mode
     Gscale = GFS_250DPS;  // Gyro full scale
     //Godr = GODR_250Hz;    // Gyro sample rate
@@ -40,7 +38,10 @@ BNO055::BNO055(uint8_t address){
 }
 
 
-void BNO055::init() {
+bool BNO055::begin(uint8_t address) {
+    BNO055_ADDRESS = address;
+    if (!isConnected()) 
+        return (false);
     // Select BNO055 config mode
     writeByte(BNO055_ADDRESS, BNO055_OPR_MODE, CONFIGMODE );
     delay(25);
@@ -64,6 +65,7 @@ void BNO055::init() {
     // Select BNO055 system operation mode
     writeByte(BNO055_ADDRESS, BNO055_OPR_MODE, OPRMode );
     delay(25);
+    return (true);
  }
 
 
@@ -300,4 +302,14 @@ void BNO055::readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8
     while (Wire.available()) {
         dest[i++] = Wire.read(); 
     }         
+}
+
+
+//Returns true if device acknowledges its address
+bool BNO055::isConnected()
+{
+  Wire.beginTransmission(BNO055_ADDRESS);
+  if (Wire.endTransmission() != 0)
+    return (false); //Sensor did not ACK
+  return (true);    //All good
 }

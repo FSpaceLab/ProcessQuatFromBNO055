@@ -1,7 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define DEBUG
+#define DEBUG  // TODO comment it
+
 #ifdef DEBUG
 #define LOG(str) Serial.println(str);
 #else
@@ -19,9 +20,13 @@
 
 #define DELAY_MS 70
 
+//#define SHOULDER_SENSOR_ADDR 0X29   // chock
+//#define ROOT_BACK_SENSOR_ADDR 0x28 // chock
+#define SHOULDER_SENSOR_ADDR 0X28 // LOW
+#define ROOT_BACK_SENSOR_ADDR 0x29 // HIGH
 #define ELBOW_SENSOR_ADDR 0x48
-#define WRIST_X_SENSOR_ADDR 0x08
-#define WRIST_Y_SENSOR_ADDR 0x09
+#define WRIST_X_SENSOR_ADDR 0x25
+#define WRIST_Y_SENSOR_ADDR 0x24
 #define THUMB_FINGER_SENSOR_ADDR 0x10
 #define INDEX_FINGER_SENSOR_ADDR 0x11
 #define MIDDLE_FINGER_SENSOR_ADDR 0x12

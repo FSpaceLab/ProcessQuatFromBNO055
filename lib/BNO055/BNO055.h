@@ -140,8 +140,9 @@
 class BNO055{
 
 	public:
-		BNO055(uint8_t);
-		void init();
+		BNO055();
+		bool begin(uint8_t address);
+		bool isConnected();
 		void readEul();
 		void readQuat();
 		void readAccel();

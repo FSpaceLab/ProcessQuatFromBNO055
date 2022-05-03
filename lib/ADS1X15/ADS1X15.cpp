@@ -69,6 +69,17 @@ bool Adafruit_ADS1X15::begin(uint8_t i2c_addr, TwoWire *wire) {
 
 /**************************************************************************/
 /*!
+    @brief  Checks is ADS1X15 connected
+
+    @return true if ADS1X15 is connected, otherwise false
+*/
+/**************************************************************************/
+bool Adafruit_ADS1X15::isConnected() {
+  return (m_i2c_dev && m_i2c_dev->detected());
+}
+
+/**************************************************************************/
+/*!
     @brief  Sets the gain and input voltage range
 
     @param gain gain setting to use
@@ -113,7 +124,7 @@ uint16_t Adafruit_ADS1X15::getDataRate() { return m_dataRate; }
 */
 /**************************************************************************/
 int16_t Adafruit_ADS1X15::readADC_SingleEnded(uint8_t channel) {
-  if (channel > 3) {
+  if (channel > 3 || !isConnected()) {
     return 0;
   }
 
