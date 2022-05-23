@@ -12,8 +12,8 @@ void MQTTController::send(const char *topic, char *data)
     // PUBLISH to the MQTT Broker (topic = Temperature, defined at the beginning)
     if (client.publish(topic, data))
     {
-        Serial.print(topic);
-        Serial.println(" send!");
+        // Serial.print(topic);
+        // Serial.println(" send!");
     }
     // Again, client.publish will return a boolean value depending on whether it succeded or not.
     // If the message failed to send, we will try again, as the connection may have broken.

@@ -154,7 +154,6 @@ class BNO055{
 		void deadReckoning(int mode=0);
 		void readTemp();
 
-		
 
 		typedef struct {
 		 	int16_t intX, intY, intZ;
@@ -225,8 +224,75 @@ class BNO055{
 
 		Temp temp;
 
+		struct calibStat
+		{
+			uint8_t sys;
+  			uint8_t gyr;
+			uint8_t acc;
+			uint8_t mag;
+		} _calibData;
 
 
+		void getCalibStat(struct calibStat *ptr) {
+			uint8_t tmp = readByte(BNO055_ADDRESS, BNO055_CALIB_STAT);
+			ptr->sys = (tmp&B11000000)>>6;
+			ptr->gyr = (tmp&B00110000)>>4;
+			ptr->acc = (tmp&B00001100)>>2;
+			ptr->mag = tmp&B00000011;
+		}
+
+		uint8_t getCalibration() {
+			getCalibStat(&_calibData);
+			uint8_t tmp = 0;
+			tmp += _calibData.sys<<6;
+			tmp += _calibData.gyr<<4;
+			tmp += _calibData.acc<<2;
+			tmp += _calibData.mag;
+			return tmp;
+		}
+
+		uint8_t getCalibrationSys() {
+			getCalibStat(&_calibData);
+			uint8_t tmp = 0;
+			tmp += _calibData.sys<<6;
+			return tmp;
+		}
+
+		uint8_t getCalibrationGyr() {
+			getCalibStat(&_calibData);
+			uint8_t tmp = 0;
+			tmp += _calibData.gyr<<4;
+			return tmp;
+		}
+
+		uint8_t getCalibrationAcc() {
+			getCalibStat(&_calibData);
+			uint8_t tmp = 0;
+			tmp += _calibData.acc<<2;
+			return tmp;
+		}
+
+		uint8_t getCalibrationMag() {
+			getCalibStat(&_calibData);
+			uint8_t tmp = 0;
+			tmp += _calibData.mag;
+			return tmp;
+		}
+
+		bool isCalibrated() {	//Gets the latest calibration values and does a bitwise and to return a true if everything is fully calibrated	
+			getCalibStat(&_calibData);
+			if((_calibData.sys & _calibData.gyr & _calibData.acc & _calibData.mag) == 3) return true;
+			return false;
+		}
+
+		void serialPrintCalibStat()	//gets the latest calibration values and prints them via serial
+		{
+			getCalibStat(&_calibData);
+			Serial.print("  CALIB_STAT_SYSTEM:  ");  Serial.print(_calibData.sys, DEC);
+			Serial.print("  CALIB_STAT_GYR:  ");  Serial.print(_calibData.gyr, DEC);
+			Serial.print("  CALIB_STAT_ACC:  ");  Serial.print(_calibData.acc, DEC);
+			Serial.print("  CALIB_STAT_MAG:  ");  Serial.println(_calibData.mag, DEC);
+		}
 
 
 	private:

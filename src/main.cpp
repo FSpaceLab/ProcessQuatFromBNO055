@@ -52,9 +52,27 @@ void setup()
   
   is_root_sensor_available = root_sensor.begin(ROOT_BACK_SENSOR_ADDR);
   if (is_root_sensor_available) {LOG("root_sensor initialized successfully");} else {LOG("Failed to initialize root_sensor");}
+  LOG("Calibration of ROOT IMU");
+  String calibration_status;
+  while (!root_sensor.isCalibrated())
+  {
+    // calibration_status = "ROOT  Sys: " + String(root_sensor.getCalibrationSys()) + " Gyr: " + String(root_sensor.getCalibrationGyr()) + " Acc: " + String(root_sensor.getCalibrationAcc()) + " Mag: " + String(root_sensor.getCalibrationMag()) + " full: " + String(root_sensor.getCalibration());
+    // LOG(calibration_status);
+    root_sensor.serialPrintCalibStat();
+  }
+   delay(300);
   
   is_shoulder_sensor_available = shoulder_sensor.begin(SHOULDER_SENSOR_ADDR);
   if (is_shoulder_sensor_available) {LOG("shoulder_sensor initialized successfully");} else {LOG("Failed to initialize shoulder_sensor");}
+  LOG("Calibration of SHOULDER IMU");
+  calibration_status = "";
+  while (!shoulder_sensor.isCalibrated())
+  {
+    // calibration_status = "SHOULDER  Sys: " + String(shoulder_sensor.getCalibrationSys()) + " Gyr: " + String(shoulder_sensor.getCalibrationGyr()) + " Acc: " + String(shoulder_sensor.getCalibrationAcc()) + " Mag: " + String(shoulder_sensor.getCalibrationMag()) + " full: " + String(shoulder_sensor.getCalibration());
+    // LOG(calibration_status);
+    Serial.print("SHOULDER: ");
+    shoulder_sensor.serialPrintCalibStat();
+  }
 
   while (!elbow_sensor.begin(ELBOW_SENSOR_ADDR))
   {
@@ -149,6 +167,8 @@ void loop()
     );
 
   final_quat = quaternion_div(root_quat, shoulder_quat);
+  // final_quat = quaternion_mult(root_quat, shoulder_quat);
+  // final_quat = quaternion_mult(shoulder_quat, root_quat);
   final_angles = get_angles_from_quat(final_quat, DIRECTION_X, DIRECTION_Y, DIRECTION_Z);
 
   StaticJsonDocument<256> json_obj;
@@ -169,9 +189,9 @@ void loop()
   mqtt.send(MQTT_ARMS_TOPIC, json_arr);
 
   // String data = String(root_quat.x) + "  " + String(root_quat.y) + "  " + String(root_quat.z) + "  " + String(root_quat.w); // TODO remove it
-  // String data = String(shoulder_quat.x) + "  " + String(shoulder_quat.y) + "  " + String(shoulder_quat.z) + "  " + String(shoulder_quat.w); // TODO remove it
+  String data = String(shoulder_quat.x) + "  " + String(shoulder_quat.y) + "  " + String(shoulder_quat.z) + "  " + String(shoulder_quat.w); // TODO remove it
   // String data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z); // TODO remove it
-  LOG(json_arr);
+  LOG(data);
 
   delay(DELAY_MS);
 }

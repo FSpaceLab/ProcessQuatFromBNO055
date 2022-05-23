@@ -69,6 +69,16 @@ bool BNO055::begin(uint8_t address) {
  }
 
 
+// void BNO055::getCalibStat(struct calibStat *ptr)	//gets current calibration status
+// {
+// 	uint8_t tmp = readByte(BNO055_ADDRESS, BNO055_CALIB_STAT);
+// 	ptr->sys = (tmp&B11000000)>>6;
+// 	ptr->gyr = (tmp&B00110000)>>4;
+// 	ptr->acc = (tmp&B00001100)>>2;
+// 	ptr->mag = tmp&B00000011;
+// }
+
+
 void BNO055::readEul(){
     uint8_t rawData[6];  // x/y/z gyro register data stored here
     readBytes(BNO055_ADDRESS, BNO055_EUL_HEADING_LSB, 6, &rawData[0]);  // Read the six raw data registers sequentially into data array
@@ -313,3 +323,4 @@ bool BNO055::isConnected()
     return (false); //Sensor did not ACK
   return (true);    //All good
 }
+
