@@ -53,26 +53,10 @@ void setup()
   is_root_sensor_available = root_sensor.begin(ROOT_BACK_SENSOR_ADDR);
   if (is_root_sensor_available) {LOG("root_sensor initialized successfully");} else {LOG("Failed to initialize root_sensor");}
   LOG("Calibration of ROOT IMU");
-  String calibration_status;
-  while (!root_sensor.isCalibrated())
-  {
-    // calibration_status = "ROOT  Sys: " + String(root_sensor.getCalibrationSys()) + " Gyr: " + String(root_sensor.getCalibrationGyr()) + " Acc: " + String(root_sensor.getCalibrationAcc()) + " Mag: " + String(root_sensor.getCalibrationMag()) + " full: " + String(root_sensor.getCalibration());
-    // LOG(calibration_status);
-    root_sensor.serialPrintCalibStat();
-  }
-   delay(300);
-  
+
   is_shoulder_sensor_available = shoulder_sensor.begin(SHOULDER_SENSOR_ADDR);
   if (is_shoulder_sensor_available) {LOG("shoulder_sensor initialized successfully");} else {LOG("Failed to initialize shoulder_sensor");}
   LOG("Calibration of SHOULDER IMU");
-  calibration_status = "";
-  while (!shoulder_sensor.isCalibrated())
-  {
-    // calibration_status = "SHOULDER  Sys: " + String(shoulder_sensor.getCalibrationSys()) + " Gyr: " + String(shoulder_sensor.getCalibrationGyr()) + " Acc: " + String(shoulder_sensor.getCalibrationAcc()) + " Mag: " + String(shoulder_sensor.getCalibrationMag()) + " full: " + String(shoulder_sensor.getCalibration());
-    // LOG(calibration_status);
-    Serial.print("SHOULDER: ");
-    shoulder_sensor.serialPrintCalibStat();
-  }
 
   while (!elbow_sensor.begin(ELBOW_SENSOR_ADDR))
   {
@@ -146,6 +130,41 @@ void setup()
     MQTT_USER,
     MQTT_PASSWORD,
     MQTT_CLIENT_ID);
+    
+
+  // CALIBRATING OF THE IMU SENSORS
+  StaticJsonDocument<256> calibrating_json_obj;
+  char calibrating_json_arr[256];
+  
+  if (is_root_sensor_available) 
+  {
+    while (!root_sensor.isCalibrated())
+    {
+      calibrating_json_obj["name"] = "ROOT";
+      calibrating_json_obj["Sys"] = String(root_sensor.getCalibrationSys(), DEC);
+      calibrating_json_obj["Gyr"] = String(root_sensor.getCalibrationGyr(), DEC);
+      calibrating_json_obj["Acc"] = String(root_sensor.getCalibrationAcc(), DEC);
+      calibrating_json_obj["Mag"] = String(root_sensor.getCalibrationMag(), DEC);
+      serializeJson(calibrating_json_obj, calibrating_json_arr);
+      LOG(calibrating_json_arr);
+      mqtt.send(MQTT_ARMS_TOPIC, calibrating_json_arr);
+    }
+  }
+
+  if (is_shoulder_sensor_available) 
+  {
+    while (!shoulder_sensor.isCalibrated())
+    {
+      calibrating_json_obj["name"] = "SHOULDER";
+      calibrating_json_obj["Sys"] = String(shoulder_sensor.getCalibrationSys(), DEC);
+      calibrating_json_obj["Gyr"] = String(shoulder_sensor.getCalibrationGyr(), DEC);
+      calibrating_json_obj["Acc"] = String(shoulder_sensor.getCalibrationAcc(), DEC);
+      calibrating_json_obj["Mag"] = String(shoulder_sensor.getCalibrationMag(), DEC);
+      serializeJson(calibrating_json_obj, calibrating_json_arr);
+      LOG(calibrating_json_arr);
+      mqtt.send(MQTT_ARMS_TOPIC, calibrating_json_arr);
+    }
+  }
 }
 
 void loop() 
@@ -189,8 +208,8 @@ void loop()
   mqtt.send(MQTT_ARMS_TOPIC, json_arr);
 
   // String data = String(root_quat.x) + "  " + String(root_quat.y) + "  " + String(root_quat.z) + "  " + String(root_quat.w); // TODO remove it
-  String data = String(shoulder_quat.x) + "  " + String(shoulder_quat.y) + "  " + String(shoulder_quat.z) + "  " + String(shoulder_quat.w); // TODO remove it
-  // String data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z); // TODO remove it
+  // String data = String(shoulder_quat.x) + "  " + String(shoulder_quat.y) + "  " + String(shoulder_quat.z) + "  " + String(shoulder_quat.w); // TODO remove it
+  String data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z); // TODO remove it
   LOG(data);
 
   delay(DELAY_MS);

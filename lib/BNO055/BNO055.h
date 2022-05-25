@@ -261,14 +261,14 @@ class BNO055{
 		uint8_t getCalibrationGyr() {
 			getCalibStat(&_calibData);
 			uint8_t tmp = 0;
-			tmp += _calibData.gyr<<4;
+			tmp += _calibData.gyr;
 			return tmp;
 		}
 
 		uint8_t getCalibrationAcc() {
 			getCalibStat(&_calibData);
 			uint8_t tmp = 0;
-			tmp += _calibData.acc<<2;
+			tmp += _calibData.acc;
 			return tmp;
 		}
 
