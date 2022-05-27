@@ -254,7 +254,7 @@ class BNO055{
 		uint8_t getCalibrationSys() {
 			getCalibStat(&_calibData);
 			uint8_t tmp = 0;
-			tmp += _calibData.sys<<6;
+			tmp += _calibData.sys;
 			return tmp;
 		}
 
