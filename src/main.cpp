@@ -132,6 +132,7 @@ void setup()
     MQTT_CLIENT_ID);
     
 
+  #ifdef CALIBRATING_IMU_ENABLE
   // CALIBRATING OF THE IMU SENSORS
   StaticJsonDocument<256> calibrating_json_obj;
   char calibrating_json_arr[256];
@@ -165,6 +166,7 @@ void setup()
       mqtt.send(MQTT_ARMS_TOPIC, calibrating_json_arr);
     }
   }
+  #endif
 }
 
 void loop() 
@@ -192,25 +194,25 @@ void loop()
 
   StaticJsonDocument<256> json_obj;
   char json_arr[256];
-  json_obj["shoulder_x"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_x) : "-1";
-  json_obj["shoulder_y"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_y) : "-1";
-  json_obj["shoulder_z"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_z) : "-1";
-  json_obj["elbow"] = elbow_sensor.isConnected() ? String(elbow_sensor.readADC_SingleEnded(0)) : "-1";
-  json_obj["wrist_x"] = wrist_x_sensor.isConnected() && wrist_x_sensor.available() ? String(wrist_x_sensor.getX()) : "-1";
-  json_obj["wrist_y"] = wrist_y_sensor.isConnected() && wrist_y_sensor.available() ? String(wrist_y_sensor.getX()) : "-1";
-  json_obj["thumb_finger"] = thumb_finger_sensor.isConnected() && thumb_finger_sensor.available() ? String(thumb_finger_sensor.getX()) : "-1";
-  json_obj["index_finger"] = index_finger_sensor.isConnected() && index_finger_sensor.available() ? String(index_finger_sensor.getX()) : "-1";
-  json_obj["middle_finger"] = middle_finger_sensor.isConnected() && middle_finger_sensor.available() ? String(middle_finger_sensor.getX()) : "-1";
-  json_obj["ring_finger"] = ring_finger_sensor.isConnected() && ring_finger_sensor.available() ? String(ring_finger_sensor.getX()) : "-1";
-  json_obj["little_finger"] = little_finger_sensor.isConnected() && little_finger_sensor.available() ? String(little_finger_sensor.getX()) : "-1";
+  json_obj["sx"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_z) : "-1";
+  json_obj["sy"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_x) : "-1";
+  json_obj["sz"] = is_root_sensor_available && is_shoulder_sensor_available ? String(final_angles.from_y) : "-1";
+  json_obj["el"] = elbow_sensor.isConnected() ? String(elbow_sensor.readADC_SingleEnded(0)) : "-1";
+  json_obj["wx"] = wrist_x_sensor.isConnected() && wrist_x_sensor.available() ? String(wrist_x_sensor.getX()) : "-1";
+  json_obj["wy"] = wrist_y_sensor.isConnected() && wrist_y_sensor.available() ? String(wrist_y_sensor.getX()) : "-1";
+  json_obj["f0"] = thumb_finger_sensor.isConnected() && thumb_finger_sensor.available() ? String(thumb_finger_sensor.getX()) : "-1";
+  json_obj["f1"] = index_finger_sensor.isConnected() && index_finger_sensor.available() ? String(index_finger_sensor.getX()) : "-1";
+  json_obj["f2"] = middle_finger_sensor.isConnected() && middle_finger_sensor.available() ? String(middle_finger_sensor.getX()) : "-1";
+  json_obj["f3"] = ring_finger_sensor.isConnected() && ring_finger_sensor.available() ? String(ring_finger_sensor.getX()) : "-1";
+  json_obj["f4"] = little_finger_sensor.isConnected() && little_finger_sensor.available() ? String(little_finger_sensor.getX()) : "-1";
   serializeJson(json_obj, json_arr);
   
   mqtt.send(MQTT_ARMS_TOPIC, json_arr);
 
   // String data = String(root_quat.x) + "  " + String(root_quat.y) + "  " + String(root_quat.z) + "  " + String(root_quat.w); // TODO remove it
   // String data = String(shoulder_quat.x) + "  " + String(shoulder_quat.y) + "  " + String(shoulder_quat.z) + "  " + String(shoulder_quat.w); // TODO remove it
-  String data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z); // TODO remove it
-  LOG(data);
+  // String data = String(final_angles.from_x) + "  " + String(final_angles.from_y) + "  " + String(final_angles.from_z); // TODO remove it
+  LOG(json_arr);
 
   delay(DELAY_MS);
 }

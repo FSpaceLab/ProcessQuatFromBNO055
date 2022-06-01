@@ -30,6 +30,15 @@ void MQTTController::subscribe(const char *feedback_topic)
     client.subscribe(feedback_topic);
 }
 
+void MQTTController::reconect_to_wifi() {
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        Serial.println("Connecting to WiFi..");
+    }
+    // Serial.println("Connected to the WiFi network");
+}
+
 void MQTTController::initialize(
     const char *ssid,
     const char *password,
@@ -76,3 +85,5 @@ void MQTTController::initialize(
         }
     }
 }
+
+

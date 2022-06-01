@@ -31,6 +31,7 @@ public:
 
     void subscribe(const char *feedback_topic);
     void send(const char *topic, char * data);
+    void reconect_to_wifi();
 };
 
 #endif
